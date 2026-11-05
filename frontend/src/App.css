@@ -1,0 +1,192 @@
+/* Тёмная тема в духе устройств Салют, крупные элементы — чтобы было видно с дивана (SberBox/ТВ) */
+:root {
+  --bg: #0b0d10;
+  --surface: #15191f;
+  --surface-2: #1d232b;
+  --line: #2a313b;
+  --line-strong: #6b7685;
+  --text: #f2f4f7;
+  --muted: #8d97a5;
+  --accent: #21a038; /* зелёный Сбера */
+  --accent-soft: rgba(33, 160, 56, 0.18);
+  --user: #6fd3ff;
+  --hint: #f5c451;
+  --danger: #ff5a5f;
+  --danger-soft: rgba(255, 90, 95, 0.18);
+  --related: rgba(255, 255, 255, 0.045);
+  --same: rgba(111, 211, 255, 0.16);
+  --inset-bottom: 0px; /* высота панели ассистента на устройстве (событие insets) */
+  --cell: min(7.4vmin, 64px);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'SB Sans Display', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; opacity: 0.35; }
+
+.app {
+  min-height: 100vh;
+  padding: 20px 28px calc(24px + var(--inset-bottom) + 140px); /* 140px — место под панель ассистента */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- верхняя панель ---------- */
+.topbar { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+.brand-mark {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--accent); font-weight: 800; font-size: 24px;
+}
+.brand h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
+.player {
+  background: transparent; border: none; border-bottom: 1px dashed var(--line);
+  color: var(--muted); font-size: 14px; padding: 2px 0; width: 160px; outline: none;
+}
+.player:focus { border-bottom-color: var(--accent); color: var(--text); }
+
+.stats { display: flex; gap: 24px; }
+.stat { display: flex; flex-direction: column; }
+.stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.stat-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 16px; font-size: 15px; transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--line-strong); }
+.btn-primary { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.btn-ghost { background: transparent; }
+.wide { width: 100%; }
+
+/* ---------- игра ---------- */
+.game { display: flex; gap: 32px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+
+.board-wrap {
+  display: grid;
+  grid-template-columns: 24px auto;
+  grid-template-rows: 24px auto;
+  gap: 6px;
+}
+.axis { display: grid; color: var(--muted); font-size: 13px; font-weight: 600; }
+.axis span { display: grid; place-items: center; }
+.axis-top { grid-column: 2; grid-template-columns: repeat(9, var(--cell)); }
+.axis-left { grid-column: 1; grid-row: 2; grid-template-rows: repeat(9, var(--cell)); }
+
+.board {
+  grid-column: 2; grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(9, var(--cell));
+  grid-template-rows: repeat(9, var(--cell));
+  border: 2px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.cell {
+  border: none;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  font-size: calc(var(--cell) * 0.5);
+  font-variant-numeric: tabular-nums;
+  display: grid; place-items: center;
+  padding: 0;
+  transition: background 0.12s;
+}
+.cell:nth-child(9n) { border-right: none; }
+.cell:nth-last-child(-n + 9) { border-bottom: none; }
+.edge-r { border-right: 2px solid var(--line-strong); }
+.edge-b { border-bottom: 2px solid var(--line-strong); }
+
+.cell-fixed { font-weight: 700; color: var(--text); }
+.cell-user { color: var(--user); font-weight: 500; }
+.cell-hinted { color: var(--hint); }
+.cell-related { background: var(--related); }
+.cell-same { background: var(--same); }
+.cell-selected { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.cell-conflict { color: var(--danger); }
+.cell-wrong { background: var(--danger-soft); color: var(--danger); }
+.board-done .cell { cursor: default; }
+
+/* ---------- цифровая панель ---------- */
+.side { width: 280px; display: flex; flex-direction: column; gap: 18px; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pad-btn {
+  aspect-ratio: 1.15; background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.pad-btn:hover:not(:disabled) { border-color: var(--accent); }
+.pad-digit { font-size: 28px; font-weight: 600; }
+.pad-left { font-size: 11px; color: var(--muted); }
+.pad-erase { grid-column: span 3; aspect-ratio: auto; padding: 12px; font-size: 15px; }
+
+.voice-tips {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+}
+.voice-tips h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+.voice-tips ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+
+/* ---------- стартовый экран ---------- */
+.start { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 6vh; }
+.start-lead { font-size: 22px; color: var(--muted); margin: 0; text-align: center; }
+.levels { display: grid; grid-template-columns: repeat(3, minmax(180px, 260px)); gap: 16px; }
+.level {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  padding: 28px 22px; text-align: left; display: flex; flex-direction: column; gap: 8px;
+}
+.level:hover:not(:disabled) { border-color: var(--accent); background: var(--surface-2); }
+.level-name { font-size: 24px; font-weight: 700; }
+.level-desc { font-size: 14px; color: var(--muted); }
+.start-loading { color: var(--muted); }
+
+/* ---------- окна ---------- */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+  display: grid; place-items: center; padding: 20px; z-index: 10;
+}
+.dialog {
+  position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+  padding: 28px 32px; width: min(620px, 100%); max-height: calc(100vh - 40px - var(--inset-bottom)); overflow: auto;
+}
+.dialog h2 { margin: 0 0 16px; }
+.dialog-close {
+  position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 28px; color: var(--muted);
+}
+.muted { color: var(--muted); }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+.tab-active { background: var(--accent); border-color: var(--accent); }
+
+.scores, .commands { width: 100%; border-collapse: collapse; font-size: 15px; }
+.scores th, .scores td, .commands td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.scores th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+.scores td { font-variant-numeric: tabular-nums; }
+.commands td:first-child { color: var(--user); white-space: nowrap; padding-right: 16px; }
+
+.win-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0 24px; }
+.win-stats > div { display: flex; flex-direction: column; background: var(--surface-2); border-radius: 14px; padding: 14px; }
+.win-value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.win-actions { display: flex; gap: 8px; }
+
+/* ---------- узкие экраны (телефон) ---------- */
+@media (max-width: 760px) {
+  :root { --cell: calc((100vw - 32px - 30px) / 9); }
+  .app { padding: 12px 16px calc(16px + var(--inset-bottom) + 120px); }
+  .stats { gap: 14px; }
+  .side { width: 100%; }
+  .voice-tips { display: none; }
+  .levels { grid-template-columns: 1fr; width: 100%; }
+}

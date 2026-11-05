@@ -1,0 +1,19 @@
+{
+  "name": "sudoku-voice-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend игры «Судоку голосом»: генерация головоломок и таблица рекордов",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/sudoku.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
