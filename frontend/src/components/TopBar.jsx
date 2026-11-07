@@ -19,7 +19,13 @@ function Timer({ startedAt, finishedAt, running }) {
   return <span className="stat-value">{formatClock(Math.max(0, Math.floor((end - startedAt) / 1000)))}</span>;
 }
 
-export function TopBar({ state, playerName, onNameChange, onNew, onHint, onCheck, onUndo, onLeaders, onHelp }) {
+// Показывает, подключён ли ассистент Салют (помогает при отладке на устройстве)
+function VoiceBadge({ status }) {
+  const text = { connecting: 'подключаю Салют…', on: 'голос: Салют подключён', off: 'голос недоступен: откройте через Салют' }[status];
+  return <span className={`voice-badge voice-${status}`}>{text}</span>;
+}
+
+export function TopBar({ state, voiceStatus, playerName, onNameChange, onNew, onHint, onCheck, onUndo, onLeaders, onHelp }) {
   const playing = state.status === 'playing';
   return (
     <header className="topbar">
@@ -34,6 +40,7 @@ export function TopBar({ state, playerName, onNameChange, onNew, onHint, onCheck
             onChange={(e) => onNameChange(e.target.value)}
             aria-label="Имя игрока"
           />
+          <VoiceBadge status={voiceStatus} />
         </div>
       </div>
 

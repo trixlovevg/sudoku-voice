@@ -25,12 +25,14 @@ export function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [playerName, setPlayerName] = useState(loadName);
   const [lastRank, setLastRank] = useState(null);
+  const [voiceStatus, setVoiceStatus] = useState('connecting'); // connecting | on | off
 
   // Ассистент живёт всё время работы приложения, а свежее состояние
   // ему отдаём через ref (обработчики создаются один раз).
   const stateRef = useRef(state);
   stateRef.current = state;
   const assistantRef = useRef(null);
+  const initStartedRef = useRef(false);
   const nameRef = useRef(playerName);
   nameRef.current = playerName;
 
@@ -129,7 +131,8 @@ export function App() {
 
   useEffect(() => {
     wakeUpServer();
-    if (assistantRef.current) return;
+    if (initStartedRef.current) return;
+    initStartedRef.current = true;
 
     // То, что увидит сценарий в payload.meta.current_app.state
     const getState = () => {
@@ -144,21 +147,23 @@ export function App() {
       };
     };
 
-    const assistant = initializeAssistant(getState);
-    assistantRef.current = assistant;
-    if (!assistant) return; // открыто вне устройства — играем мышью/клавиатурой
+    initializeAssistant(getState, (assistant) => {
+      assistantRef.current = assistant;
+      setVoiceStatus(assistant ? 'on' : 'off');
+      if (!assistant) return; // открыто вне Салюта — играем мышью/клавиатурой
 
-    assistant.on('data', (event) => {
-      if (event.type === 'character') return;
-      if (event.type === 'insets') {
-        const bottom = event.insets?.bottom ?? 0;
-        document.documentElement.style.setProperty('--inset-bottom', `${bottom}px`);
-        return;
-      }
-      if (event.action) actionRef.current(event.action);
+      assistant.on('data', (event) => {
+        if (event.type === 'character') return;
+        if (event.type === 'insets') {
+          const bottom = event.insets?.bottom ?? 0;
+          document.documentElement.style.setProperty('--inset-bottom', `${bottom}px`);
+          return;
+        }
+        if (event.action) actionRef.current(event.action);
+      });
+      assistant.on('start', () => console.log('Ассистент запущен', assistant.getInitialData?.()));
+      assistant.on('error', (e) => console.warn('Ошибка ассистента', e));
     });
-    assistant.on('start', () => console.log('Ассистент запущен', assistant.getInitialData?.()));
-    assistant.on('error', (e) => console.warn('Ошибка ассистента', e));
   }, []);
 
   // ---------------- победа: сохраняем результат и сообщаем сценарию ----------------
@@ -217,6 +222,7 @@ export function App() {
     <div className="app">
       <TopBar
         state={state}
+        voiceStatus={voiceStatus}
         playerName={playerName}
         onNameChange={changeName}
         onNew={() => startNewGame(state.difficulty)}

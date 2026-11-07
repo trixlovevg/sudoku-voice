@@ -190,3 +190,9 @@ button:disabled { cursor: default; opacity: 0.35; }
   .voice-tips { display: none; }
   .levels { grid-template-columns: 1fr; width: 100%; }
 }
+
+/* ---------- индикатор подключения ассистента ---------- */
+.voice-badge { display: block; font-size: 11px; margin-top: 2px; color: var(--muted); }
+.voice-badge::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
+.voice-on::before { background: var(--accent); }
+.voice-off::before { background: var(--danger); }

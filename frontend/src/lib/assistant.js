@@ -6,9 +6,10 @@
 // =====================================================================
 import { createAssistant, createSmartappDebugger } from '@salutejs/client';
 
-export function initializeAssistant(getState) {
+// onReady(assistant | null) вызывается, когда ясно, есть ли ассистент
+export function initializeAssistant(getState, onReady) {
   if (process.env.NODE_ENV === 'development') {
-    return createSmartappDebugger({
+    onReady(createSmartappDebugger({
       token: process.env.REACT_APP_TOKEN ?? '',
       // Эта фраза отправляется при запуске и должна совпасть с паттерном
       // состояния Start в scenario/src/entryPoint.sc («запусти судоку голосом»)
@@ -19,15 +20,30 @@ export function initializeAssistant(getState) {
         screenshotMode: false,
         tabIndex: -1,
       },
-    });
+    }));
+    return;
   }
-  // На устройстве/в эмуляторе Studio есть window.AssistantHost. В обычном браузере
-  // его нет — тогда игра работает без голоса, а не падает.
-  if (!window.AssistantHost) {
-    console.warn('AssistantHost не найден: приложение открыто не на устройстве Салют, голос отключён.');
-    return null;
-  }
-  return createAssistant({ getState });
+  // На устройстве Салют страница получает объект window.AssistantHost.
+  // На некоторых клиентах он появляется чуть позже загрузки страницы,
+  // поэтому ждём его до 5 секунд. В обычном браузере его нет —
+  // тогда игра работает без голоса, а не падает.
+  const start = Date.now();
+  const tryConnect = () => {
+    if (window.AssistantHost) {
+      try {
+        onReady(createAssistant({ getState }));
+      } catch (e) {
+        console.warn('Не удалось подключить ассистента:', e);
+        onReady(null);
+      }
+    } else if (Date.now() - start < 5000) {
+      setTimeout(tryConnect, 100);
+    } else {
+      console.warn('AssistantHost не найден: приложение открыто не через Салют, голос отключён.');
+      onReady(null);
+    }
+  };
+  tryConnect();
 }
 
 // Отправка события в сценарий: action_id -> event!: <action_id> в .sc-файле
