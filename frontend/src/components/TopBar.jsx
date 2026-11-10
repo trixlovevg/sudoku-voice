@@ -25,6 +25,18 @@ function VoiceBadge({ status }) {
   return <span className={`voice-badge voice-${status}`}>{text}</span>;
 }
 
+// После ввода имени экранная клавиатура закрывается, но некоторые встроенные
+// браузеры оставляют страницу увеличенной или сдвинутой. Возвращаем исходный вид.
+function resetViewport() {
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta) {
+    const content = meta.getAttribute('content');
+    meta.setAttribute('content', content + ', minimum-scale=1');
+    setTimeout(() => meta.setAttribute('content', content), 100);
+  }
+  setTimeout(() => window.scrollTo(0, 0), 50);
+}
+
 export function TopBar({ state, voiceStatus, playerName, onNameChange, onNew, onHint, onCheck, onUndo, onLeaders, onHelp }) {
   const playing = state.status === 'playing';
   return (
@@ -38,6 +50,14 @@ export function TopBar({ state, voiceStatus, playerName, onNameChange, onNew, on
             value={playerName}
             maxLength={24}
             onChange={(e) => onNameChange(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter, Esc и «Назад» на пульте завершают ввод имени
+              if (['Enter', 'Escape', 'Backspace'].includes(e.key) && (e.key !== 'Backspace' || !playerName)) {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+            onBlur={resetViewport}
             aria-label="Имя игрока"
           />
           <VoiceBadge status={voiceStatus} />
