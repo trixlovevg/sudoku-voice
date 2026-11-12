@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useReducer, useRef, useState } from 'rea
 import './App.css';
 import { reducer, initialState } from './lib/gameReducer';
 import { fetchPuzzle, postScore, wakeUpServer } from './lib/api';
+import { findNext, focusFirst } from './lib/spatialNav';
 import { initializeAssistant, sendEvent } from './lib/assistant';
 import { DIFFICULTIES, toString81 } from './lib/sudoku';
 import { Board } from './components/Board';
@@ -179,21 +180,108 @@ export function App() {
   }, [state.status, state.finishedAt, state.startedAt, state.difficulty, state.hints]);
 
   // ---------------- клавиатура и пульт ТВ ----------------
+  // ---------------- куда ставить фокус (важно для пульта ТВ) ----------------
+  // Новая игра → фокус на поле
   useEffect(() => {
+    if (state.status === 'playing') document.querySelector('.board')?.focus();
+  }, [state.startedAt, state.status]);
+
+  // Открылось окно → фокус на его кнопки; закрылось → обратно на поле или на кнопки экрана
+  const overlayWasOpen = useRef(false);
+  useEffect(() => {
+    if (state.overlay) {
+      overlayWasOpen.current = true;
+      const t = setTimeout(() => {
+        const dialog = document.querySelector('.dialog');
+        if (dialog) focusFirst(dialog);
+      }, 0);
+      return () => clearTimeout(t);
+    }
+    if (!overlayWasOpen.current) return;
+    overlayWasOpen.current = false;
+    const board = document.querySelector('.board:not(.board-done)');
+    if (stateRef.current.status === 'playing' && board) board.focus();
+    else focusFirst(document.querySelector('main') || document);
+  }, [state.overlay]);
+
+  // Фокус «на поле» = фокус на элементе .board; стрелки двигают выделенную клетку,
+  // а у края поля переводят фокус на ближайшую кнопку (spatialNav.js).
+  // Фокус «на кнопке» — стрелки ходят между кнопками, OK/Enter нажимает кнопку.
+  useEffect(() => {
+    const DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    const EDGE = { up: (r) => r === 0, down: (r) => r === 8, left: (r, c) => c === 0, right: (r, c) => c === 8 };
+
+    const focusEl = (el) => {
+      if (!el) return;
+      if (el.classList.contains('board') && !stateRef.current.selected) {
+        dispatch({ type: 'SELECT', r: 0, c: 0 });
+      }
+      el.focus();
+    };
+
     const onKey = (e) => {
-      if (e.target.tagName === 'INPUT') return;
       const s = stateRef.current;
-      if (s.overlay && (e.key === 'Escape' || e.key === 'Backspace')) {
-        e.preventDefault();
-        dispatch({ type: 'OVERLAY', overlay: null });
+      const dir = DIRS[e.key];
+      const active = document.activeElement;
+      const dialog = document.querySelector('.dialog');
+
+      // 1. Открыто окно (правила, рекорды, победа): навигация только внутри него
+      if (dialog) {
+        if (e.key === 'Escape' || (e.key === 'Backspace' && active?.tagName !== 'INPUT')) {
+          e.preventDefault();
+          dispatch({ type: 'OVERLAY', overlay: null });
+          return;
+        }
+        if (dir) {
+          e.preventDefault();
+          if (!dialog.contains(active)) focusFirst(dialog);
+          else focusEl(findNext(active.getBoundingClientRect(), dir, dialog, active));
+        }
         return;
       }
+
+      const inBoard = !!active?.closest?.('.board');
+      const onBody = !active || active === document.body;
+
+      // 2. Поле ввода имени: влево/вправо двигают курсор в тексте, вверх/вниз — уходят из поля
+      if (active?.tagName === 'INPUT') {
+        if (dir === 'up' || dir === 'down') {
+          e.preventDefault();
+          focusEl(findNext(active.getBoundingClientRect(), dir, document, active));
+        }
+        return;
+      }
+
+      // 3. Фокус на кнопке: переходим к соседнему элементу
+      if (dir && !onBody && (!inBoard || s.status !== 'playing')) {
+        e.preventDefault();
+        focusEl(findNext(active.getBoundingClientRect(), dir, document, active));
+        return;
+      }
+
+      // 4. Фокуса нет (например, после запуска): первая стрелка ставит его на поле или на первую кнопку
+      if (dir && onBody) {
+        e.preventDefault();
+        const board = document.querySelector('.board');
+        if (s.status === 'playing' && board) focusEl(board);
+        else focusFirst(document.querySelector('main') || document);
+        return;
+      }
+
+      // 5. Фокус на поле (или ни на чём): управление клетками
       if (s.status !== 'playing' || !s.selected) return;
       const i = idx(s.selected.r, s.selected.c);
-      const dirs = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
-      if (dirs[e.key]) {
+      if (dir) {
         e.preventDefault();
-        dispatch({ type: 'MOVE', direction: dirs[e.key] });
+        const { r, c } = s.selected;
+        if (EDGE[dir](r, c)) {
+          // Край поля: уходим на ближайшую кнопку в этом направлении (если она есть)
+          const cell = document.querySelectorAll('.board .cell')[i];
+          const board = document.querySelector('.board');
+          if (cell) focusEl(findNext(cell.getBoundingClientRect(), dir, document, board));
+        } else {
+          dispatch({ type: 'MOVE', direction: dir });
+        }
       } else if (/^[1-9]$/.test(e.key)) {
         dispatch({ type: 'SET', i, v: Number(e.key) });
       } else if (['0', 'Backspace', 'Delete'].includes(e.key)) {

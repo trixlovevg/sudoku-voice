@@ -17,7 +17,13 @@ export function Board({ state, onSelect }) {
       <div className="axis axis-left" aria-hidden>
         {N.map((n) => <span key={n}>{n}</span>)}
       </div>
-      <div className={`board ${status !== 'playing' ? 'board-done' : ''}`} role="grid" aria-label="Поле судоку">
+      {/* tabIndex: поле получает фокус с пульта; внутри стрелки двигают выделенную клетку */}
+      <div
+        className={`board ${status !== 'playing' ? 'board-done' : ''}`}
+        role="grid"
+        aria-label="Поле судоку"
+        tabIndex={status === 'playing' ? 0 : -1}
+      >
         {board.map((v, i) => {
           const r = Math.floor(i / 9);
           const c = i % 9;
@@ -46,7 +52,10 @@ export function Board({ state, onSelect }) {
             <button
               key={i}
               className={cls}
-              onClick={() => onSelect(r, c)}
+              onClick={(e) => {
+                onSelect(r, c);
+                e.currentTarget.closest('.board')?.focus(); // фокус — на поле, а не на клетке
+              }}
               aria-label={`Строка ${r + 1}, столбец ${c + 1}${v ? `, ${v}` : ', пусто'}`}
               tabIndex={-1}
             >

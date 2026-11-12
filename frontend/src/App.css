@@ -198,3 +198,16 @@ button:disabled { cursor: default; opacity: 0.35; }
 .voice-badge::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--muted); vertical-align: 1px; }
 .voice-on::before { background: var(--accent); }
 .voice-off::before { background: var(--danger); }
+
+/* ---------- фокус для пульта ТВ и клавиатуры ---------- */
+.btn:focus-visible, .pad-btn:focus-visible, .level:focus-visible, .tab:focus-visible,
+.dialog-close:focus-visible, .player:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.level:focus-visible { background: var(--surface-2); }
+.board:focus { outline: none; box-shadow: 0 0 0 3px var(--accent); }
+/* Когда фокус ушёл с поля на кнопки, выделенная клетка становится приглушённой */
+.board:not(:focus) .cell-selected { box-shadow: inset 0 0 0 2px var(--line-strong); }
+.pad-btn.is-off { opacity: 0.35; cursor: default; }
+.pad-btn.is-off:hover { border-color: var(--line); }

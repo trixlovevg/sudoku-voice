@@ -9,12 +9,23 @@ export function NumberPad({ board, disabled, onDigit, onErase, onSolve, solved, 
     <aside className="side">
       <div className="pad">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-          <button key={d} className="pad-btn" disabled={disabled || left(d) <= 0} onClick={() => onDigit(d)}>
+          // Не атрибут disabled, а aria-disabled: кнопка остаётся доступной для фокуса с пульта,
+          // просто ничего не делает (например, когда выбрана клетка с исходной цифрой)
+          <button
+            key={d}
+            className={`pad-btn ${disabled || left(d) <= 0 ? 'is-off' : ''}`}
+            aria-disabled={disabled || left(d) <= 0}
+            onClick={() => !(disabled || left(d) <= 0) && onDigit(d)}
+          >
             <span className="pad-digit">{d}</span>
             <span className="pad-left">{Math.max(0, left(d))}</span>
           </button>
         ))}
-        <button className="pad-btn pad-erase" disabled={disabled} onClick={onErase}>
+        <button
+          className={`pad-btn pad-erase ${disabled ? 'is-off' : ''}`}
+          aria-disabled={disabled}
+          onClick={() => !disabled && onErase()}
+        >
           Стереть
         </button>
       </div>
